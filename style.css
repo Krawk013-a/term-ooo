@@ -5,6 +5,7 @@
     --cor-nao-existe: #3a3a3c; /* Cinza escuro */
     --cor-lugar-errado: #b59f3b; /* Amarelo */
     --cor-certo: #538d4e;      /* Verde */
+    --cor-tecla-padrao: #818384;
 }
 
 * {
@@ -65,7 +66,14 @@ main {
     align-items: center;
     transition: transform 0.6s;
     transform-style: preserve-3d;
+    position: relative; /* Necessário para a animação 3D e o cursor */
 }
+
+/* Adicionado para indicar a célula ativa */
+.letra.ativa {
+    border-color: var(--cor-texto); /* Muda a cor da borda para indicar seleção */
+}
+
 
 /* Animação de virar a letra */
 .letra.revelada {
@@ -101,13 +109,16 @@ main {
     padding: 10px;
     display: flex;
     flex-direction: column;
+    align-items: center; /* Centraliza as linhas do teclado */
     gap: 8px;
+    margin-bottom: 20px; /* Um pequeno espaçamento da parte inferior da tela */
 }
 
 .linha-teclado {
     display: flex;
     justify-content: center;
     gap: 6px;
+    width: 100%; /* Permite que a linha se ajuste ao container pai */
 }
 
 .tecla {
@@ -116,14 +127,21 @@ main {
     border: 0;
     padding: 0;
     height: 58px;
+    width: 43px; /* LARGURA FIXA PARA TECLAS NORMAIS */
     cursor: pointer;
-    background-color: #818384;
+    background-color: var(--cor-tecla-padrao);
     color: var(--cor-texto);
-    flex-grow: 1;
     border-radius: 4px;
     text-transform: uppercase;
+    display: flex; /* Para centralizar o texto/ícone */
+    justify-content: center; /* Para centralizar o texto/ícone */
+    align-items: center; /* Para centralizar o texto/ícone */
+    font-size: 1rem;
+    user-select: none; /* Impede seleção de texto ao clicar */
 }
-.tecla.grande { flex-grow: 1.5; }
+.tecla.grande {
+    width: 68px; /* LARGURA MAIOR PARA ENTER/BACKSPACE */
+}
 .tecla:hover { background-color: #999b9c; }
 
 /* Cores das teclas */
@@ -133,9 +151,11 @@ main {
 
 /* Notificações */
 #notificacao-container {
-    height: 50px;
+    min-height: 50px; /* Garante espaço para a notificação aparecer */
     display: flex;
     align-items: center;
+    justify-content: center;
+    margin-bottom: 15px; /* Espaço entre a notificação e o tabuleiro */
 }
 .notificacao {
     background-color: var(--cor-texto);
@@ -143,4 +163,11 @@ main {
     padding: 10px 20px;
     border-radius: 5px;
     font-weight: bold;
+    animation: fadeinout 0.5s forwards; /* Animação para aparecer e desaparecer */
+}
+
+/* Animação para notificações */
+@keyframes fadeinout {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
