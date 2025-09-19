@@ -1,0 +1,146 @@
+:root {
+    --cor-fundo: #121213;
+    --cor-borda: #3a3a3c;
+    --cor-texto: #ffffff;
+    --cor-nao-existe: #3a3a3c; /* Cinza escuro */
+    --cor-lugar-errado: #b59f3b; /* Amarelo */
+    --cor-certo: #538d4e;      /* Verde */
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+    font-family: Arial, Helvetica, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+}
+
+header {
+    width: 100%;
+    text-align: center;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+#tabuleiro {
+    display: grid;
+    grid-template-rows: repeat(6, 1fr);
+    gap: 5px;
+    padding: 10px;
+}
+
+.linha {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 5px;
+}
+
+.letra {
+    width: 60px;
+    height: 60px;
+    border: 2px solid var(--cor-borda);
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+/* Animação de virar a letra */
+.letra.revelada {
+    transform: rotateX(180deg);
+}
+
+.letra .frente, .letra .verso {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.letra .frente {
+    transform: rotateX(0deg);
+}
+
+.letra .verso {
+    transform: rotateX(180deg);
+    border: none;
+}
+
+/* Cores das letras */
+.letra.certo .verso { background-color: var(--cor-certo); }
+.letra.lugar-errado .verso { background-color: var(--cor-lugar-errado); }
+.letra.nao-existe .verso { background-color: var(--cor-nao-existe); }
+
+
+#teclado-container {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.linha-teclado {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+}
+
+.tecla {
+    font-family: inherit;
+    font-weight: bold;
+    border: 0;
+    padding: 0;
+    height: 58px;
+    cursor: pointer;
+    background-color: #818384;
+    color: var(--cor-texto);
+    flex-grow: 1;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+.tecla.grande { flex-grow: 1.5; }
+.tecla:hover { background-color: #999b9c; }
+
+/* Cores das teclas */
+.tecla.certo { background-color: var(--cor-certo); }
+.tecla.lugar-errado { background-color: var(--cor-lugar-errado); }
+.tecla.nao-existe { background-color: var(--cor-nao-existe); }
+
+/* Notificações */
+#notificacao-container {
+    height: 50px;
+    display: flex;
+    align-items: center;
+}
+.notificacao {
+    background-color: var(--cor-texto);
+    color: var(--cor-fundo);
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+}
