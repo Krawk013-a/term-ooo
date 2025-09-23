@@ -112,8 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleKeyPress({ key }) {
+    function handleKeyPress(e) {
         if (jogoPausado) return;
+        const key = e.key.toLowerCase(); // <-- CORREÇÃO APLICADA AQUI
+
         if (key === 'enter') submeterTentativa();
         else if (key === 'backspace') apagarLetra();
         else if (key.length === 1 && key >= 'a' && key <= 'z') adicionarLetra(key);
