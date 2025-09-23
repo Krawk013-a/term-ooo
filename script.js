@@ -5,113 +5,102 @@ document.addEventListener('DOMContentLoaded', () => {
     const notificacaoContainer = document.getElementById('notificacao-container');
     const modoBotoes = document.querySelectorAll('.modo-btn');
 
-    // --- CONSTANTES DO JOGO ---
+    // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
 
-    // --- ESTADO DO JOGO ---
+    // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
     let numTentativas = 6;
     let palavrasSecretas = [];
-    let tabuleiroStates = []; // Armazena as letras de cada tabuleiro
-    let jogosFinalizados = []; // Controla quais jogos já foram vencidos
+    let jogosFinalizados = [];
     let tentativaAtual = 0;
     let letraAtual = 0;
-    let jogoPausado = false; // Bloqueia input durante animações/fim de jogo
+    let jogoPausado = false;
+    let palpiteAtual = Array(TAMANHO_PALAVRA).fill('');
 
-    // --- INICIALIZAÇÃO ---
     function init() {
-        limparTudo();
-        configurarModoDeJogo();
-        selecionarPalavrasSecretas();
-
-        tabuleirosContainer.className = `modo-${numeroDeJogos}`;
-
-        for (let i = 0; i < numeroDeJogos; i++) {
-            tabuleiroStates.push(Array(numTentativas).fill(null).map(() => Array(TAMANHO_PALAVRA).fill('')));
-            jogosFinalizados.push(false);
-            criarTabuleiro(i);
-        }
-
-        criarTeclado();
+        limparEstado();
+        configurarModo();
+        selecionarPalavras();
+        criarEstruturaUI();
         adicionarListeners();
     }
 
-    function limparTudo() {
+    function limparEstado() {
         tentativaAtual = 0;
         letraAtual = 0;
         jogoPausado = false;
+        palpiteAtual.fill('');
         palavrasSecretas = [];
-        tabuleiroStates = [];
         jogosFinalizados = [];
         tabuleirosContainer.innerHTML = '';
         tecladoContainer.innerHTML = '';
         document.removeEventListener('keydown', handleKeyPress);
     }
 
-    function configurarModoDeJogo() {
+    function configurarModo() {
         if (numeroDeJogos === 2) numTentativas = 7;
         else if (numeroDeJogos === 4) numTentativas = 9;
         else numTentativas = 6;
+        jogosFinalizados = Array(numeroDeJogos).fill(false);
     }
 
-    function selecionarPalavrasSecretas() {
-        let respostasDisponiveis = [...RESPOSTAS];
+    function selecionarPalavras() {
+        let disponiveis = [...RESPOSTAS];
         for (let i = 0; i < numeroDeJogos; i++) {
-            const index = Math.floor(Math.random() * respostasDisponiveis.length);
-            palavrasSecretas.push(respostasDisponiveis.splice(index, 1)[0]);
+            const index = Math.floor(Math.random() * disponiveis.length);
+            palavrasSecretas.push(disponiveis.splice(index, 1)[0]);
         }
     }
 
-    // --- CRIAÇÃO DA UI ---
-    function criarTabuleiro(index) {
-        const tabuleiroDiv = document.createElement('div');
-        tabuleiroDiv.className = 'tabuleiro';
-        tabuleiroDiv.style.gridTemplateRows = `repeat(${numTentativas}, 1fr)`;
-
-        for (let i = 0; i < numTentativas; i++) {
-            const linhaDiv = document.createElement('div');
-            linhaDiv.className = 'linha';
-            linhaDiv.id = `linha-${index}-${i}`; // ID único para cada linha
-            for (let j = 0; j < TAMANHO_PALAVRA; j++) {
-                const letraDiv = document.createElement('div');
-                letraDiv.className = 'letra';
-                letraDiv.id = `letra-${index}-${i}-${j}`;
-                letraDiv.innerHTML = `<div class="frente"></div><div class="verso"></div>`;
-                linhaDiv.appendChild(letraDiv);
-            }
-            tabuleiroDiv.appendChild(linhaDiv);
+    function criarEstruturaUI() {
+        tabuleirosContainer.className = `modo-${numeroDeJogos}`;
+        for (let i = 0; i < numeroDeJogos; i++) {
+            criarTabuleiro(i);
         }
-        tabuleirosContainer.appendChild(tabuleiroDiv);
+        criarTeclado();
+    }
+
+    function criarTabuleiro(index) {
+        const tabuleiro = document.createElement('div');
+        tabuleiro.className = 'tabuleiro';
+        tabuleiro.style.gridTemplateRows = `repeat(${numTentativas}, 1fr)`;
+        for (let i = 0; i < numTentativas; i++) {
+            const linha = document.createElement('div');
+            linha.className = 'linha';
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) {
+                linha.innerHTML += `<div class="letra" id="letra-${index}-${i}-${j}"><div class="frente"></div><div class="verso"></div></div>`;
+            }
+            tabuleiro.appendChild(linha);
+        }
+        tabuleirosContainer.appendChild(tabuleiro);
     }
 
     function criarTeclado() {
         const layout = [
-            ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-            ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-            ['enter', 'z', 'x', 'c', 'v', 'b', 'n', 'm', 'backspace']
+            'q w e r t y u i o p',
+            'a s d f g h j k l',
+            'enter z x c v b n m backspace'
         ];
-        layout.forEach(linha => {
+        layout.forEach(linhaStr => {
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha-teclado';
-            linha.forEach(key => {
+            linhaStr.split(' ').forEach(key => {
                 const tecla = document.createElement('button');
                 tecla.className = 'tecla';
                 tecla.textContent = key === 'backspace' ? '⌫' : key;
                 tecla.dataset.key = key;
-                if (key === 'enter' || key === 'backspace') tecla.classList.add('grande');
+                if (key.length > 1) tecla.classList.add('grande');
                 linhaDiv.appendChild(tecla);
             });
             tecladoContainer.appendChild(linhaDiv);
         });
     }
 
-    // --- EVENTOS E INPUT ---
     function adicionarListeners() {
         document.addEventListener('keydown', handleKeyPress);
         tecladoContainer.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON') {
-                handleKeyPress({ key: e.target.dataset.key });
-            }
+            if (e.target.dataset.key) handleKeyPress({ key: e.target.dataset.key });
         });
         modoBotoes.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -123,9 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleKeyPress(e) {
+    function handleKeyPress({ key }) {
         if (jogoPausado) return;
-        const key = e.key.toLowerCase();
         if (key === 'enter') submeterTentativa();
         else if (key === 'backspace') apagarLetra();
         else if (key.length === 1 && key >= 'a' && key <= 'z') adicionarLetra(key);
@@ -133,63 +121,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function adicionarLetra(letra) {
         if (letraAtual < TAMANHO_PALAVRA) {
+            palpiteAtual[letraAtual] = letra;
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
-                    tabuleiroStates[i][tentativaAtual][letraAtual] = letra;
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    if (celula) celula.querySelector('.frente').textContent = letra;
+                    celula.querySelector('.frente').textContent = letra;
+                    celula.classList.add('ativa');
                 }
             }
             letraAtual++;
-            atualizarCelulaAtiva();
         }
     }
 
     function apagarLetra() {
         if (letraAtual > 0) {
             letraAtual--;
-            for (let i = 0; i < numeroDeJogos; i++) {
-                if (!jogosFinalizados[i]) {
-                    tabuleiroStates[i][tentativaAtual][letraAtual] = '';
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    if (celula) celula.querySelector('.frente').textContent = '';
-                }
-            }
-            atualizarCelulaAtiva();
-        }
-    }
-
-    function atualizarCelulaAtiva() {
-        document.querySelectorAll('.letra.ativa').forEach(c => c.classList.remove('ativa'));
-        if (letraAtual < TAMANHO_PALAVRA) {
+            palpiteAtual[letraAtual] = '';
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    if (celula) celula.classList.add('ativa');
+                    celula.querySelector('.frente').textContent = '';
+                    celula.classList.remove('ativa');
                 }
             }
         }
     }
 
-    // --- LÓGICA DO JOGO ---
     function submeterTentativa() {
         if (letraAtual < TAMANHO_PALAVRA) {
-            mostrarNotificacao("Palavra incompleta!");
-            return;
+            return mostrarNotificacao("Palavra incompleta!");
         }
-
-        const palpite = tabuleiroStates[0][tentativaAtual].join('');
-        if (!DICIONARIO.includes(palpite)) {
-            mostrarNotificacao("Palavra não existe!");
-            return;
+        const palpiteStr = palpiteAtual.join('');
+        if (!DICIONARIO.includes(palpiteStr)) {
+            return mostrarNotificacao("Palavra não existe!");
         }
-
         jogoPausado = true;
-        document.querySelectorAll('.letra.ativa').forEach(c => c.classList.remove('ativa'));
-        verificarPalpite(palpite);
+        verificarPalpite(palpiteStr);
     }
 
-    function verificarPalpite(palpite) {
+    function verificarPalpite(palpiteStr) {
         const corTeclado = {};
 
         for (let i = 0; i < numeroDeJogos; i++) {
@@ -197,61 +167,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const palavraSecreta = palavrasSecretas[i];
             const resultados = Array(TAMANHO_PALAVRA).fill('');
-            const contagemLetras = {};
-            for (const letra of palavraSecreta) contagemLetras[letra] = (contagemLetras[letra] || 0) + 1;
+            const contagem = {};
+            for (const letra of palavraSecreta) contagem[letra] = (contagem[letra] || 0) + 1;
             
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
-                if (palpite[j] === palavraSecreta[j]) {
+                if (palpiteStr[j] === palavraSecreta[j]) {
                     resultados[j] = 'certo';
-                    contagemLetras[palpite[j]]--;
+                    contagem[palpiteStr[j]]--;
                 }
             }
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 if (resultados[j]) continue;
-                if (palavraSecreta.includes(palpite[j]) && contagemLetras[palpite[j]] > 0) {
+                if (palavraSecreta.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) {
                     resultados[j] = 'lugar-errado';
-                    contagemLetras[palpite[j]]--;
+                    contagem[palpiteStr[j]]--;
                 } else {
                     resultados[j] = 'nao-existe';
                 }
             }
             
-            // **A CORREÇÃO ESTÁ AQUI:** Usando o ID da linha para garantir que selecionamos a correta.
-            const linhaDiv = document.getElementById(`linha-${i}-${tentativaAtual}`);
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 setTimeout(() => {
-                    const celula = linhaDiv.children[j];
+                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${j}`);
                     celula.classList.add('revelada', resultados[j]);
-                    celula.querySelector('.verso').textContent = palpite[j];
+                    celula.querySelector('.verso').textContent = palpiteStr[j];
                 }, j * 250);
 
-                const statusAtual = corTeclado[palpite[j]];
-                const statusNovo = resultados[j];
-                if (!statusAtual || statusNovo === 'certo' || (statusNovo === 'lugar-errado' && statusAtual !== 'certo')) {
-                    corTeclado[palpite[j]] = statusNovo;
+                const statusAtual = corTeclado[palpiteStr[j]];
+                if (!statusAtual || statusAtual !== 'certo') {
+                    corTeclado[palpiteStr[j]] = resultados[j];
                 }
             }
 
-            if (palpite === palavraSecreta) jogosFinalizados[i] = true;
+            if (palpiteStr === palavraSecreta) jogosFinalizados[i] = true;
         }
 
         setTimeout(() => {
             atualizarTeclado(corTeclado);
-
-            const vitoria = jogosFinalizados.every(finalizado => finalizado);
+            const vitoria = jogosFinalizados.every(v => v);
             const derrota = !vitoria && tentativaAtual === numTentativas - 1;
 
             if (vitoria) {
                 mostrarNotificacao("Você venceu!", 5000);
                 jogoPausado = true;
             } else if (derrota) {
-                mostrarNotificacao(`Você perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
+                mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
                 jogoPausado = true;
             } else {
                 tentativaAtual++;
                 letraAtual = 0;
+                palpiteAtual.fill('');
                 jogoPausado = false;
-                atualizarCelulaAtiva();
             }
         }, TAMANHO_PALAVRA * 250);
     }
@@ -267,16 +233,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mostrarNotificacao(mensagem, duracao = 2000) {
-        const notificacaoExistente = notificacaoContainer.querySelector('.notificacao');
-        if (notificacaoExistente) notificacaoExistente.remove();
-
         const notificacao = document.createElement('div');
         notificacao.className = 'notificacao';
         notificacao.textContent = mensagem;
+        notificacaoContainer.innerHTML = '';
         notificacaoContainer.appendChild(notificacao);
         setTimeout(() => notificacao.remove(), duracao);
     }
 
-    // Inicia o jogo no modo padrão
     init();
 });
