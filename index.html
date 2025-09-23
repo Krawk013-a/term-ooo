@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Termo S2</title>
+    <title>Term.ooo</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
         <h1>Termo</h1>
+        <div id="top-icons">
+            <button id="stats-btn" class="icon-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24">
+                    <path fill="currentColor" d="M16,11V3H8v6H2v12h20V11H16z M10,5h2v14h-2V5z M4,13h2v6H4V13z M20,19h-2v-6h2V19z"></path>
+                </svg>
+            </button>
+        </div>
         <div id="modo-container">
             <button class="modo-btn ativo" data-modo="1">Clássico</button>
             <button class="modo-btn" data-modo="2">Dueto</button>
@@ -22,6 +29,34 @@
             </div>
         <div id="teclado-container"></div>
     </main>
+
+    <div id="stats-modal" class="modal">
+        <div class="modal-content">
+            <button id="close-stats-btn" class="close-btn">&times;</button>
+            <h2>Estatísticas</h2>
+            <div id="stats-grid">
+                <div class="stat-item">
+                    <div id="stat-jogados" class="stat-value">0</div>
+                    <div>Jogos</div>
+                </div>
+                <div class="stat-item">
+                    <div id="stat-vitorias" class="stat-value">0%</div>
+                    <div>Vitórias</div>
+                </div>
+                <div class="stat-item">
+                    <div id="stat-sequencia" class="stat-value">0</div>
+                    <div>Seq. Atual</div>
+                </div>
+                <div class="stat-item">
+                    <div id="stat-melhor-seq" class="stat-value">0</div>
+                    <div>Melhor Seq.</div>
+                </div>
+            </div>
+            <h3>Distribuição de Tentativas</h3>
+            <div id="distribuicao-container">
+                </div>
+        </div>
+    </div>
 
     <script src="dicionario/dicionario.js"></script>
     <script src="dicionario/respostas.js"></script>
