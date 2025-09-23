@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < numTentativas; i++) {
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha';
+            linhaDiv.id = `linha-${index}-${i}`; // ID único para cada linha
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 const letraDiv = document.createElement('div');
                 letraDiv.className = 'letra';
@@ -199,14 +200,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const contagemLetras = {};
             for (const letra of palavraSecreta) contagemLetras[letra] = (contagemLetras[letra] || 0) + 1;
             
-            // Passada 1: Letras corretas (verde)
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 if (palpite[j] === palavraSecreta[j]) {
                     resultados[j] = 'certo';
                     contagemLetras[palpite[j]]--;
                 }
             }
-            // Passada 2: Letras no lugar errado (amarelo) e inexistentes (cinza)
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 if (resultados[j]) continue;
                 if (palavraSecreta.includes(palpite[j]) && contagemLetras[palpite[j]] > 0) {
@@ -217,15 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Animação e atualização visual
-            const linhaDiv = document.querySelector(`#tabuleiros-container .tabuleiro:nth-child(${i+1}) .linha:nth-child(${tentativaAtual+1})`);
+            // **A CORREÇÃO ESTÁ AQUI:** Usando o ID da linha para garantir que selecionamos a correta.
+            const linhaDiv = document.getElementById(`linha-${i}-${tentativaAtual}`);
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 setTimeout(() => {
                     const celula = linhaDiv.children[j];
                     celula.classList.add('revelada', resultados[j]);
                     celula.querySelector('.verso').textContent = palpite[j];
                 }, j * 250);
-                 // Atualiza cores do teclado (lógica de prioridade)
+
                 const statusAtual = corTeclado[palpite[j]];
                 const statusNovo = resultados[j];
                 if (!statusAtual || statusNovo === 'certo' || (statusNovo === 'lugar-errado' && statusAtual !== 'certo')) {
@@ -236,7 +235,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (palpite === palavraSecreta) jogosFinalizados[i] = true;
         }
 
-        // --- LÓGICA DE FIM DE RODADA ---
         setTimeout(() => {
             atualizarTeclado(corTeclado);
 
