@@ -7,9 +7,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const statsModal = document.getElementById('stats-modal');
     const statsBtn = document.getElementById('stats-btn');
     const closeStatsBtn = document.getElementById('close-stats-btn');
+    const usernameModal = document.getElementById('username-modal');
+    const usernameInput = document.getElementById('username-input');
+    const usernameSaveBtn = document.getElementById('username-save-btn');
 
     // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
+    const API_URL = '/api/ranking'; // URL relativa para o nosso backend na Vercel
 
     // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
@@ -20,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let letraAtual = 0;
     let jogoPausado = false;
     let palpiteAtual = Array(TAMANHO_PALAVRA).fill('');
-    let stats = {}; // Objeto para guardar as estatísticas
+    let stats = {};
+    let username = '';
 
     // --- INICIALIZAÇÃO ---
     function init() {
@@ -28,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
         configurarModo();
         selecionarPalavras();
         criarEstruturaUI();
-        adicionarListeners();
+        adicionarListenersDeJogo();
     }
 
     function limparEstado() {
@@ -60,9 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function criarEstruturaUI() {
         tabuleirosContainer.className = `modo-${numeroDeJogos}`;
-        for (let i = 0; i < numeroDeJogos; i++) {
-            criarTabuleiro(i);
-        }
+        for (let i = 0; i < numeroDeJogos; i++) criarTabuleiro(i);
         criarTeclado();
     }
 
@@ -82,9 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function criarTeclado() {
-        const layout = [
-            'q w e r t y u i o p', 'a s d f g h j k l', 'enter z x c v b n m backspace'
-        ];
+        const layout = ['q w e r t y u i o p', 'a s d f g h j k l', 'enter z x c v b n m backspace'];
         layout.forEach(linhaStr => {
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha-teclado';
@@ -101,11 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- EVENTOS E INPUT ---
-    function adicionarListeners() {
-        document.addEventListener('keydown', handleKeyPress);
-        tecladoContainer.addEventListener('click', (e) => {
-            if (e.target.dataset.key) handleKeyPress({ key: e.target.dataset.key });
-        });
+    function adicionarListenersGerais() {
         modoBotoes.forEach(btn => {
             btn.addEventListener('click', () => {
                 modoBotoes.forEach(b => b.classList.remove('ativo'));
@@ -119,6 +116,22 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('click', (e) => {
             if (e.target == statsModal) statsModal.style.display = 'none';
         });
+        usernameSaveBtn.addEventListener('click', salvarUsername);
+
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('ativo'));
+                btn.classList.add('ativo');
+                document.getElementById(btn.dataset.tab).classList.add('ativo');
+            });
+        });
+    }
+
+    function adicionarListenersDeJogo() {
+        document.addEventListener('keydown', handleKeyPress);
+        tecladoContainer.addEventListener('click', (e) => {
+            if (e.target.dataset.key) handleKeyPress({ key: e.target.dataset.key });
+        });
     }
 
     function handleKeyPress({ key }) {
@@ -128,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (keyLower === 'backspace') apagarLetra();
         else if (keyLower.length === 1 && keyLower >= 'a' && keyLower <= 'z') adicionarLetra(keyLower);
     }
-
+    
     function adicionarLetra(letra) {
         if (letraAtual < TAMANHO_PALAVRA) {
             palpiteAtual[letraAtual] = letra;
@@ -175,35 +188,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const resultados = Array(TAMANHO_PALAVRA).fill('');
             const contagem = {};
             for (const letra of palavraSecreta) contagem[letra] = (contagem[letra] || 0) + 1;
-            
-            for (let j = 0; j < TAMANHO_PALAVRA; j++) {
-                if (palpiteStr[j] === palavraSecreta[j]) {
-                    resultados[j] = 'certo';
-                    contagem[palpiteStr[j]]--;
-                }
-            }
-            for (let j = 0; j < TAMANHO_PALAVRA; j++) {
-                if (resultados[j]) continue;
-                if (palavraSecreta.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) {
-                    resultados[j] = 'lugar-errado';
-                    contagem[palpiteStr[j]]--;
-                } else {
-                    resultados[j] = 'nao-existe';
-                }
-            }
-            
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (palpiteStr[j] === palavraSecreta[j]) { resultados[j] = 'certo'; contagem[palpiteStr[j]]--; } }
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (resultados[j]) continue; if (palavraSecreta.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) { resultados[j] = 'lugar-errado'; contagem[palpiteStr[j]]--; } else { resultados[j] = 'nao-existe'; } }
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 setTimeout(() => {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${j}`);
-                    celula.classList.remove('ativa');
-                    celula.classList.add('revelada', resultados[j]);
-                    celula.querySelector('.verso').textContent = palpiteStr[j];
+                    celula.classList.remove('ativa'); celula.classList.add('revelada', resultados[j]); celula.querySelector('.verso').textContent = palpiteStr[j];
                 }, j * 250);
-
                 const statusAtual = corTeclado[palpiteStr[j]];
                 if (!statusAtual || statusAtual !== 'certo') corTeclado[palpiteStr[j]] = resultados[j];
             }
-
             if (palpiteStr === palavraSecreta) jogosFinalizados[i] = true;
         }
 
@@ -215,9 +209,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (vitoria || derrota) {
                 atualizarStats(vitoria);
                 jogoPausado = true;
-                if(vitoria) mostrarNotificacao("Você venceu!", 5000);
-                else mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
-                setTimeout(exibirStats, 2000); // Mostra stats após 2s
+                if(vitoria) {
+                    mostrarNotificacao("Você venceu!", 2000);
+                    submeterPontuacaoOnline(tentativaAtual + 1);
+                } else {
+                    mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
+                }
+                setTimeout(exibirStats, 2000);
             } else {
                 tentativaAtual++;
                 letraAtual = 0;
@@ -226,27 +224,32 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }, TAMANHO_PALAVRA * 250);
     }
+    
+    function atualizarTeclado(cores) { for (const [letra, status] of Object.entries(cores)) { const tecla = document.querySelector(`.tecla[data-key="${letra}"]`); if (tecla) { tecla.classList.remove('certo', 'lugar-errado', 'nao-existe'); tecla.classList.add(status); } } }
+    function mostrarNotificacao(mensagem, duracao = 2000) { const n = document.createElement('div'); n.className = 'notificacao'; n.textContent = mensagem; notificacaoContainer.innerHTML = ''; notificacaoContainer.appendChild(n); setTimeout(() => n.remove(), duracao); }
 
-    function atualizarTeclado(cores) {
-        for (const [letra, status] of Object.entries(cores)) {
-            const tecla = document.querySelector(`.tecla[data-key="${letra}"]`);
-            if (tecla) {
-                tecla.classList.remove('certo', 'lugar-errado', 'nao-existe');
-                tecla.classList.add(status);
-            }
+    // --- LÓGICA DE USUÁRIO E ESTATÍSTICAS ---
+    function checarUsername() {
+        username = localStorage.getItem('termoUsername');
+        if (!username) {
+            usernameModal.style.display = 'flex';
+        } else {
+            init();
         }
     }
 
-    function mostrarNotificacao(mensagem, duracao = 2000) {
-        const notificacao = document.createElement('div');
-        notificacao.className = 'notificacao';
-        notificacao.textContent = mensagem;
-        notificacaoContainer.innerHTML = '';
-        notificacaoContainer.appendChild(notificacao);
-        setTimeout(() => notificacao.remove(), duracao);
+    function salvarUsername() {
+        const nomeInput = usernameInput.value.trim();
+        if (nomeInput && nomeInput.length >= 3) {
+            username = nomeInput;
+            localStorage.setItem('termoUsername', username);
+            usernameModal.style.display = 'none';
+            init();
+        } else {
+            mostrarNotificacao("Nome inválido (mín. 3 letras)");
+        }
     }
 
-    // --- LÓGICA DE ESTATÍSTICAS ---
     function carregarStats() {
         const statsJSON = localStorage.getItem('termoStats');
         stats = statsJSON ? JSON.parse(statsJSON) : {};
@@ -257,62 +260,97 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getStatsAtuais() {
-        if (!stats[numeroDeJogos]) { // Se não existe stats para o modo atual, cria
-            stats[numeroDeJogos] = {
-                jogados: 0,
-                vitorias: 0,
-                seqAtual: 0,
-                melhorSeq: 0,
-                distribuicao: {}
-            };
+        if (!stats[numeroDeJogos]) {
+            stats[numeroDeJogos] = { jogados: 0, vitorias: 0, seqAtual: 0, melhorSeq: 0, distribuicao: {} };
         }
         return stats[numeroDeJogos];
     }
 
     function atualizarStats(vitoria) {
-        const statsAtuais = getStatsAtuais();
-        statsAtuais.jogados++;
+        const s = getStatsAtuais();
+        s.jogados++;
         if (vitoria) {
-            statsAtuais.vitorias++;
-            statsAtuais.seqAtual++;
-            statsAtuais.melhorSeq = Math.max(statsAtuais.melhorSeq, statsAtuais.seqAtual);
+            s.vitorias++;
+            s.seqAtual++;
+            s.melhorSeq = Math.max(s.melhorSeq, s.seqAtual);
             const linhaVitoria = tentativaAtual + 1;
-            statsAtuais.distribuicao[linhaVitoria] = (statsAtuais.distribuicao[linhaVitoria] || 0) + 1;
+            s.distribuicao[linhaVitoria] = (s.distribuicao[linhaVitoria] || 0) + 1;
         } else {
-            statsAtuais.seqAtual = 0;
+            s.seqAtual = 0;
         }
         salvarStats();
     }
     
     function exibirStats() {
-        const statsAtuais = getStatsAtuais();
-        document.getElementById('stat-jogados').textContent = statsAtuais.jogados;
-        const percVitorias = statsAtuais.jogados > 0 ? Math.round((statsAtuais.vitorias / statsAtuais.jogados) * 100) : 0;
+        const s = getStatsAtuais();
+        document.getElementById('username-display').textContent = username;
+        document.getElementById('stat-jogados').textContent = s.jogados;
+        const percVitorias = s.jogados > 0 ? Math.round((s.vitorias / s.jogados) * 100) : 0;
         document.getElementById('stat-vitorias').textContent = `${percVitorias}%`;
-        document.getElementById('stat-sequencia').textContent = statsAtuais.seqAtual;
-        document.getElementById('stat-melhor-seq').textContent = statsAtuais.melhorSeq;
+        document.getElementById('stat-sequencia').textContent = s.seqAtual;
+        document.getElementById('stat-melhor-seq').textContent = s.melhorSeq;
         
         const containerDist = document.getElementById('distribuicao-container');
         containerDist.innerHTML = '';
-        const maxVitoriasDist = Math.max(...Object.values(statsAtuais.distribuicao), 0);
+        const maxVitoriasDist = Math.max(...Object.values(s.distribuicao), 0);
         
         for (let i = 1; i <= numTentativas; i++) {
-            const vitorias = statsAtuais.distribuicao[i] || 0;
+            const vitorias = s.distribuicao[i] || 0;
             const perc = maxVitoriasDist > 0 ? (vitorias / maxVitoriasDist) * 100 : 0;
-            const linhaHTML = `
-                <div class="dist-linha">
-                    <div class="dist-label">${i}</div>
-                    <div class="dist-barra" style="width: ${perc}%;">
-                        ${vitorias}
-                    </div>
-                </div>
-            `;
-            containerDist.innerHTML += linhaHTML;
+            containerDist.innerHTML += `<div class="dist-linha"><div class="dist-label">${i}</div><div class="dist-barra" style="width: ${perc || 5}%;">${vitorias}</div></div>`;
         }
+        buscarRankingOnline();
         statsModal.style.display = 'flex';
     }
 
+    // --- LÓGICA DO RANKING ONLINE ---
+
+    async function buscarRankingOnline() {
+        const container = document.getElementById('ranking-online-container');
+        container.innerHTML = '<p>Carregando ranking...</p>';
+        try {
+            const response = await fetch(`${API_URL}?modo=${numeroDeJogos}`);
+            if (!response.ok) throw new Error('Erro ao buscar ranking do servidor.');
+            const ranking = await response.json();
+            
+            if (ranking.length === 0) {
+                container.innerHTML = '<p>Nenhuma pontuação registrada neste modo. Seja o primeiro!</p>';
+                return;
+            }
+
+            let rankingHTML = '<table><tr><th>#</th><th>Nome</th><th>Tentativas</th></tr>';
+            ranking.forEach((item, index) => {
+                rankingHTML += `<tr><td>${index + 1}</td><td>${item.nome}</td><td>${item.tentativas}</td></tr>`;
+            });
+            rankingHTML += '</table>';
+            container.innerHTML = rankingHTML;
+
+        } catch (error) {
+            container.innerHTML = `<p style="color: #ff8a80;">Não foi possível carregar o ranking. Verifique sua conexão ou tente mais tarde.</p><p style="font-size: 0.8rem; color: #818384;">${error.message}</p>`;
+        }
+    }
+
+    async function submeterPontuacaoOnline(tentativas) {
+        try {
+            const response = await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nome: username,
+                    modo: numeroDeJogos,
+                    tentativas: tentativas
+                })
+            });
+            if (!response.ok) throw new Error('Erro ao enviar pontuação para o servidor.');
+            console.log('Pontuação enviada com sucesso!');
+        } catch (error) {
+            console.error(error.message);
+            // Opcional: mostrar uma pequena notificação de erro ao usuário
+        }
+    }
+    
     // --- INÍCIO DO JOGO ---
     carregarStats();
-    init();
+    adicionarListenersGerais();
+    checarUsername(); // Dispara o início do jogo ou o modal de nome
 });
