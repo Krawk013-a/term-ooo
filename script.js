@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tabuleirosContainer = document.getElementById('tabuleiros-container');
     const modoBotoes = document.querySelectorAll('.modo-btn');
 
-    let numeroDeJogos = 1; // Modo padrão
+    let numeroDeJogos = 1;
     let palavrasSecretas = [];
     let NUM_TENTATIVAS = 6;
     const TAMANHO_PALAVRA = 5;
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let letraAtual = 0;
     let tabuleiroStates = [];
     let jogosAtivos = [];
-    let jogoPausado = false; // Renomeado de 'jogoFinalizado' para maior clareza
+    let jogoPausado = false;
 
     // --- INICIALIZAÇÃO E CONTROLE DE MODO DE JOGO ---
 
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         criarTeclado();
         ouvirEventos();
         atualizarCelulaAtiva();
+        console.log("Modo de Jogo:", numeroDeJogos, "| Tentativas:", NUM_TENTATIVAS);
         console.log("Palavras secretas:", palavrasSecretas);
     }
     
@@ -84,17 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < NUM_TENTATIVAS; i++) {
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha';
-            linhaDiv.id = `linha-${index}-${i}`;
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 const letraDiv = document.createElement('div');
                 letraDiv.className = 'letra';
                 letraDiv.id = `letra-${index}-${i}-${j}`;
-
                 const frente = document.createElement('div');
                 frente.className = 'frente';
                 const verso = document.createElement('div');
                 verso.className = 'verso';
-
                 letraDiv.appendChild(frente);
                 letraDiv.appendChild(verso);
                 letraDiv.addEventListener('click', () => selecionarCelula(i, j));
@@ -242,13 +240,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const linhaAtualDiv = document.getElementById(`linha-${i}-${tentativaAtual}`);
+            const linhaDiv = document.querySelector(`#tabuleiro-${i} .linha:nth-child(${tentativaAtual + 1})`);
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 setTimeout(() => {
-                    const celula = linhaAtualDiv.children[j];
+                    const celula = linhaDiv.children[j];
                     celula.classList.add('revelada', resultados[j]);
                     celula.querySelector('.verso').textContent = palpite[j];
-                }, j * 350);
+                }, j * 300);
             }
 
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
@@ -262,23 +260,29 @@ document.addEventListener('DOMContentLoaded', () => {
             if (palpite === palavraSecreta) jogosAtivos[i] = false;
         }
 
+        // LÓGICA DE FIM DE RODADA (CORRIGIDA)
         setTimeout(() => {
             atualizarTeclado(corTecladoAgregada);
+
             const vitoria = jogosAtivos.every(ativo => !ativo);
-            const derrota = tentativaAtual === NUM_TENTATIVAS - 1;
+            // A condição de derrota é checada apenas se não houver vitória.
+            const derrota = !vitoria && tentativaAtual === NUM_TENTATIVAS - 1;
 
             if (vitoria) {
                 mostrarNotificacao("Você venceu!", 5000);
+                jogoPausado = true; // Trava o jogo permanentemente
             } else if (derrota) {
                 const naoAdivinhadas = palavrasSecretas.filter((_, idx) => jogosAtivos[idx]).join(', ').toUpperCase();
                 mostrarNotificacao(`Você perdeu! Palavras: ${naoAdivinhadas}`, 10000);
+                jogoPausado = true; // Trava o jogo permanentemente
             } else {
+                // Se o jogo não acabou, prepara para a próxima tentativa
                 tentativaAtual++;
                 letraAtual = 0;
-                jogoPausado = false;
+                jogoPausado = false; // Desbloqueia a entrada
                 atualizarCelulaAtiva();
             }
-        }, TAMANHO_PALAVRA * 350);
+        }, TAMANHO_PALAVRA * 300);
     }
 
     function atualizarTeclado(cores) {
@@ -300,5 +304,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => notificacao.remove(), duracao);
     }
 
+    // Inicia o jogo no modo padrão
     initGame();
 });
