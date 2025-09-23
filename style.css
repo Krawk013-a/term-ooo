@@ -17,7 +17,7 @@
 html, body {
     background-color: var(--cor-fundo);
     color: var(--cor-texto);
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     width: 100%;
     height: 100%;
 }
@@ -25,23 +25,20 @@ html, body {
 body {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
 }
 
 header {
-    width: 100%;
     text-align: center;
     padding: 10px 0;
     border-bottom: 1px solid var(--cor-borda);
-    flex-shrink: 0; /* Impede que o header encolha */
 }
 
 header h1 {
+    font-size: 2rem;
     margin-bottom: 10px;
 }
 
-#modo-jogo-container {
+#modo-container {
     display: flex;
     justify-content: center;
     gap: 10px;
@@ -52,39 +49,33 @@ header h1 {
     font-size: 1rem;
     background-color: var(--cor-tecla-padrao);
     color: var(--cor-texto);
-    border: none;
+    border: 2px solid transparent;
     border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
 }
 
-.modo-btn:hover {
-    background-color: #999b9c;
+.modo-btn.ativo {
+    background-color: var(--cor-certo);
+    border-color: var(--cor-texto);
 }
 
 main {
-    width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start; /* Alinha ao topo */
+    justify-content: space-around;
     flex-grow: 1;
-    overflow-y: auto; /* Permite scroll se necessário */
-    padding: 10px 0;
+    width: 100%;
+    overflow: hidden;
 }
 
 #tabuleiros-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     gap: 20px;
-    width: 100%;
     padding: 10px;
-}
-
-.modo-2, .modo-4 {
-    flex-wrap: wrap;
-    align-items: center; /* Centraliza melhor quando quebra a linha */
 }
 
 .tabuleiro {
@@ -100,25 +91,30 @@ main {
 
 .letra {
     border: 2px solid var(--cor-borda);
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     font-weight: bold;
     text-transform: uppercase;
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: transform 0.6s, border-color 0.2s;
+    transition: transform 0.6s;
     transform-style: preserve-3d;
     position: relative;
-    width: 62px; /* Tamanho base */
-    height: 62px;
+    width: 60px;
+    height: 60px;
 }
 
 /* Tamanhos dinâmicos para modos */
-.modo-2 .letra { width: 50px; height: 50px; font-size: 2rem; }
-.modo-4 .letra { width: 45px; height: 45px; font-size: 1.7rem; }
+.modo-2 .letra { width: 50px; height: 50px; font-size: 1.8rem; }
+.modo-4 .letra { width: 42px; height: 42px; font-size: 1.5rem; }
 
 .letra.ativa {
-    border-color: var(--cor-texto);
+    border-color: #565758;
+    animation: pulse 0.5s infinite alternate;
+}
+
+@keyframes pulse {
+    to { border-color: #f8f8f8; }
 }
 
 .letra.revelada {
@@ -138,12 +134,11 @@ main {
 
 .letra .verso {
     transform: rotateX(180deg);
-    border: none;
 }
 
-.letra.certo .verso { background-color: var(--cor-certo); }
-.letra.lugar-errado .verso { background-color: var(--cor-lugar-errado); }
-.letra.nao-existe .verso { background-color: var(--cor-nao-existe); }
+.letra.certo .verso { background-color: var(--cor-certo); border-color: var(--cor-certo); }
+.letra.lugar-errado .verso { background-color: var(--cor-lugar-errado); border-color: var(--cor-lugar-errado); }
+.letra.nao-existe .verso { background-color: var(--cor-nao-existe); border-color: var(--cor-nao-existe); }
 
 #teclado-container {
     padding: 10px 0;
@@ -152,7 +147,6 @@ main {
     align-items: center;
     gap: 8px;
     width: 100%;
-    flex-shrink: 0; /* Impede que o teclado encolha */
 }
 
 .linha-teclado {
@@ -178,25 +172,24 @@ main {
     align-items: center;
     font-size: 1rem;
     user-select: none;
+    transition: background-color 0.2s;
 }
-.tecla.grande { width: 68px; }
-.tecla:hover { background-color: #999b9c; }
 
-.tecla.certo, .tecla.lugar-errado, .tecla.nao-existe {
-    color: white;
-}
+.tecla.grande { width: 68px; }
+
+.tecla.certo, .tecla.lugar-errado, .tecla.nao-existe { color: white; }
 .tecla.certo { background-color: var(--cor-certo); }
 .tecla.lugar-errado { background-color: var(--cor-lugar-errado); }
 .tecla.nao-existe { background-color: var(--cor-nao-existe); }
 
 #notificacao-container {
-    position: fixed; /* Fica fixo na tela */
-    top: 10%;
+    position: fixed;
+    top: 15%;
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
     min-height: 50px;
-    pointer-events: none; /* Não interfere com cliques */
+    pointer-events: none;
 }
 
 .notificacao {
