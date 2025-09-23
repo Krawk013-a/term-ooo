@@ -144,6 +144,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (letraAtual < TAMANHO_PALAVRA) {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
+                    // **A CORREÇÃO ESTÁ AQUI: SALVANDO NA MEMÓRIA**
+                    tabuleiroStates[i][tentativaAtual][letraAtual] = letra;
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
                     if (celula) celula.querySelector('.frente').textContent = letra;
                 }
@@ -158,6 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
             letraAtual--;
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
+                    // **A CORREÇÃO ESTÁ AQUI: LIMPANDO DA MEMÓRIA**
+                    tabuleiroStates[i][tentativaAtual][letraAtual] = '';
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
                     if (celula) celula.querySelector('.frente').textContent = '';
                 }
@@ -188,13 +192,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE VERIFICAÇÃO E SUBMISSÃO ---
 
     function submeterTentativa() {
-        const palpiteArray = tabuleiroStates[0][tentativaAtual];
         if (letraAtual < TAMANHO_PALAVRA) {
             mostrarNotificacao("Palavra incompleta!");
             return;
         }
 
+        const palpiteArray = tabuleiroStates[0][tentativaAtual];
         const palpite = palpiteArray.join('');
+
         if (!DICIONARIO.includes(palpite)) {
             mostrarNotificacao("Palavra não existe!");
             return;
@@ -270,14 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 tentativaAtual++;
                 letraAtual = 0;
-                // Atualiza o estado para a nova linha
-                for (let i = 0; i < numeroDeJogos; i++) {
-                    if (jogosAtivos[i]) {
-                         for(let j=0; j < TAMANHO_PALAVRA; j++) {
-                            tabuleiroStates[i][tentativaAtual-1][j] = palpite[j];
-                         }
-                    }
-                }
                 jogoPausado = false;
                 atualizarCelulaAtiva();
             }
