@@ -13,8 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let tentativaAtual = 0;
     let letraAtual = 0;
     let tabuleiroStates = [];
-    let jogosAtivos = []; // Controla quais jogos ainda não foram vencidos
-    let jogoPausado = false; // Impede input durante animações ou fim de jogo
+    let jogosAtivos = [];
+    let jogoPausado = false;
 
     // --- INICIALIZAÇÃO E CONTROLE DE MODO DE JOGO ---
 
@@ -34,8 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         criarTeclado();
         ouvirEventos();
         atualizarCelulaAtiva();
-        console.log(`Modo de Jogo: ${numeroDeJogos} | Tentativas: ${NUM_TENTATIVAS}`);
-        console.log("Palavras secretas:", palavrasSecretas);
+        console.log(`Modo: ${numeroDeJogos} | Tentativas: ${NUM_TENTATIVAS} | Palavras:`, palavrasSecretas);
     }
     
     function limparEstadoAnterior() {
@@ -52,13 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function configurarModoDeJogo() {
-        if (numeroDeJogos === 2) {
-            NUM_TENTATIVAS = 7;
-        } else if (numeroDeJogos === 4) {
-            NUM_TENTATIVAS = 9;
-        } else {
-            NUM_TENTATIVAS = 6;
-        }
+        if (numeroDeJogos === 2) NUM_TENTATIVAS = 7;
+        else if (numeroDeJogos === 4) NUM_TENTATIVAS = 9;
+        else NUM_TENTATIVAS = 6;
     }
 
     function selecionarPalavrasSecretas() {
@@ -81,12 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function criarTabuleiro(index) {
         const tabuleiroDiv = document.createElement('div');
         tabuleiroDiv.className = 'tabuleiro';
-        tabuleiroDiv.id = `tabuleiro-${index}`;
+        tabuleiroDiv.style.gridTemplateRows = `repeat(${NUM_TENTATIVAS}, 1fr)`;
 
         for (let i = 0; i < NUM_TENTATIVAS; i++) {
             const linhaDiv = document.createElement('div');
             linhaDiv.className = 'linha';
-            // Adiciona um ID único para cada linha para facilitar a seleção posterior
             linhaDiv.id = `linha-${index}-${i}`;
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 const letraDiv = document.createElement('div');
@@ -150,7 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (letraAtual < TAMANHO_PALAVRA) {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
-                    tabuleiroStates[i][tentativaAtual][letraAtual] = letra;
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
                     if (celula) celula.querySelector('.frente').textContent = letra;
                 }
@@ -165,7 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
             letraAtual--;
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
-                    tabuleiroStates[i][tentativaAtual][letraAtual] = '';
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
                     if (celula) celula.querySelector('.frente').textContent = '';
                 }
@@ -197,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function submeterTentativa() {
         const palpiteArray = tabuleiroStates[0][tentativaAtual];
-        if (palpiteArray.includes('')) {
+        if (letraAtual < TAMANHO_PALAVRA) {
             mostrarNotificacao("Palavra incompleta!");
             return;
         }
@@ -239,8 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultados[j] = 'nao-existe';
                 }
             }
-            
-            // CORREÇÃO CRÍTICA APLICADA AQUI
+
             const linhaDiv = document.getElementById(`linha-${i}-${tentativaAtual}`);
             if (linhaDiv) {
                 for (let j = 0; j < TAMANHO_PALAVRA; j++) {
@@ -279,6 +270,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 tentativaAtual++;
                 letraAtual = 0;
+                // Atualiza o estado para a nova linha
+                for (let i = 0; i < numeroDeJogos; i++) {
+                    if (jogosAtivos[i]) {
+                         for(let j=0; j < TAMANHO_PALAVRA; j++) {
+                            tabuleiroStates[i][tentativaAtual-1][j] = palpite[j];
+                         }
+                    }
+                }
                 jogoPausado = false;
                 atualizarCelulaAtiva();
             }
@@ -296,7 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function mostrarNotificacao(mensagem, duracao = 2000) {
-        notificacaoDiv.innerHTML = '';
+        const notificacaoExistente = notificacaoDiv.querySelector('.notificacao');
+        if(notificacaoExistente) notificacaoExistente.remove();
+
         const notificacao = document.createElement('div');
         notificacao.className = 'notificacao';
         notificacao.textContent = mensagem;
@@ -308,6 +309,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }, duracao);
     }
 
-    // Inicia o jogo no modo padrão
     initGame();
 });
