@@ -99,10 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const frente = document.createElement('div');
                 frente.className = 'frente';
                 const verso = document.createElement('div');
-                verso.className = 'verso';
+verso.className = 'verso';
 
                 letraDiv.appendChild(frente);
                 letraDiv.appendChild(verso);
+                
+                // Adiciona listener para poder clicar e mover o cursor
+                letraDiv.addEventListener('click', () => selecionarCelula(i, j));
+
                 linhaDiv.appendChild(letraDiv);
             }
             tabuleiroDiv.appendChild(linhaDiv);
@@ -165,8 +169,14 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
                     tabuleiroStates[i][tentativaAtual][letraAtual] = letra;
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`).firstChild;
-                    celula.textContent = letra;
+                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
+                    // CORREÇÃO APLICADA AQUI
+                    if (celula) {
+                        const frente = celula.querySelector('.frente');
+                        if (frente) {
+                            frente.textContent = letra;
+                        }
+                    }
                 }
             }
             letraAtual++;
@@ -180,10 +190,24 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (jogosAtivos[i]) {
                     tabuleiroStates[i][tentativaAtual][letraAtual] = '';
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`).firstChild;
-                    celula.textContent = '';
+                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
+                    // CORREÇÃO APLICADA AQUI
+                    if (celula) {
+                        const frente = celula.querySelector('.frente');
+                        if (frente) {
+                            frente.textContent = '';
+                        }
+                    }
                 }
             }
+            atualizarCelulaAtiva();
+        }
+    }
+    
+    function selecionarCelula(linha, coluna) {
+        // Permite mover o cursor clicando na linha atual
+        if (!jogoFinalizado && linha === tentativaAtual) {
+            letraAtual = coluna;
             atualizarCelulaAtiva();
         }
     }
@@ -205,13 +229,18 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- LÓGICA DE VERIFICAÇÃO E SUBMISSÃO ---
 
     function submeterTentativa() {
-        const primeiroJogoAtivo = tabuleiroStates.find((_, index) => jogosAtivos[index]);
-        if (!primeiroJogoAtivo || primeiroJogoAtivo[tentativaAtual].some(letra => letra === '')) {
+        // Pega o estado do primeiro jogo ativo para validação
+        const indicePrimeiroJogoAtivo = jogosAtivos.findIndex(ativo => ativo === true);
+        if (indicePrimeiroJogoAtivo === -1) return; // Nenhum jogo ativo
+
+        const palpiteArray = tabuleiroStates[indicePrimeiroJogoAtivo][tentativaAtual];
+
+        if (palpiteArray.some(letra => letra === '')) {
             mostrarNotificacao("Palavra incompleta!");
             return;
         }
 
-        const palpite = primeiroJogoAtivo[tentativaAtual].join('');
+        const palpite = palpiteArray.join('');
         if (!DICIONARIO.includes(palpite)) {
             mostrarNotificacao("Palavra não existe!");
             return;
@@ -272,11 +301,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const status = resultados[j];
                 const statusAtual = coresTecladoGeral[letra];
 
-                if (!statusAtual || (status === 'certo') || (status === 'lugar-errado' && statusAtual !== 'certo')) {
+                // Prioridade: Certo > Lugar Errado > Não Existe
+                if (!statusAtual || status === 'certo' || (status === 'lugar-errado' && statusAtual !== 'certo')) {
                     coresTecladoGeral[letra] = status;
                 }
             }
-
 
             if (palpite === palavraSecreta) {
                 jogosAtivos[i] = false;
@@ -293,7 +322,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarNotificacao("Você venceu!", 5000);
                 jogoFinalizado = true;
             } else if (tentativaAtual === NUM_TENTATIVAS - 1) {
-                mostrarNotificacao(`Você perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
+                const palavrasNaoAdivinhadas = palavrasSecretas.filter((_, index) => jogosAtivos[index]).join(', ').toUpperCase();
+                mostrarNotificacao(`Você perdeu! Palavras: ${palavrasNaoAdivinhadas}`, 10000);
                 jogoFinalizado = true;
             } else {
                 jogoFinalizado = false;
@@ -305,13 +335,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function atualizarTeclado(coresTeclado) {
-         for (const [letra, status] of Object.entries(coresTeclado)) {
+        for (const [letra, status] of Object.entries(coresTeclado)) {
             const tecla = document.querySelector(`.tecla[data-key="${letra}"]`);
             if (tecla) {
-                // Remove classes de cor anteriores para evitar conflitos
+                // Remove classes anteriores para garantir a prioridade correta
                 tecla.classList.remove('certo', 'lugar-errado', 'nao-existe');
-                // Adiciona a classe de maior prioridade
-                if(status) tecla.classList.add(status);
+                if (status) tecla.classList.add(status);
             }
         }
     }
