@@ -218,4 +218,67 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             // Animação e atualização visual
-            const linhaDiv = document.querySelector(`#tabuleiros-container .tabuleiro:nth-child(${i+1}) .
+            const linhaDiv = document.querySelector(`#tabuleiros-container .tabuleiro:nth-child(${i+1}) .linha:nth-child(${tentativaAtual+1})`);
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) {
+                setTimeout(() => {
+                    const celula = linhaDiv.children[j];
+                    celula.classList.add('revelada', resultados[j]);
+                    celula.querySelector('.verso').textContent = palpite[j];
+                }, j * 250);
+                 // Atualiza cores do teclado (lógica de prioridade)
+                const statusAtual = corTeclado[palpite[j]];
+                const statusNovo = resultados[j];
+                if (!statusAtual || statusNovo === 'certo' || (statusNovo === 'lugar-errado' && statusAtual !== 'certo')) {
+                    corTeclado[palpite[j]] = statusNovo;
+                }
+            }
+
+            if (palpite === palavraSecreta) jogosFinalizados[i] = true;
+        }
+
+        // --- LÓGICA DE FIM DE RODADA ---
+        setTimeout(() => {
+            atualizarTeclado(corTeclado);
+
+            const vitoria = jogosFinalizados.every(finalizado => finalizado);
+            const derrota = !vitoria && tentativaAtual === numTentativas - 1;
+
+            if (vitoria) {
+                mostrarNotificacao("Você venceu!", 5000);
+                jogoPausado = true;
+            } else if (derrota) {
+                mostrarNotificacao(`Você perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
+                jogoPausado = true;
+            } else {
+                tentativaAtual++;
+                letraAtual = 0;
+                jogoPausado = false;
+                atualizarCelulaAtiva();
+            }
+        }, TAMANHO_PALAVRA * 250);
+    }
+
+    function atualizarTeclado(cores) {
+        for (const [letra, status] of Object.entries(cores)) {
+            const tecla = document.querySelector(`.tecla[data-key="${letra}"]`);
+            if (tecla) {
+                tecla.classList.remove('certo', 'lugar-errado', 'nao-existe');
+                tecla.classList.add(status);
+            }
+        }
+    }
+
+    function mostrarNotificacao(mensagem, duracao = 2000) {
+        const notificacaoExistente = notificacaoContainer.querySelector('.notificacao');
+        if (notificacaoExistente) notificacaoExistente.remove();
+
+        const notificacao = document.createElement('div');
+        notificacao.className = 'notificacao';
+        notificacao.textContent = mensagem;
+        notificacaoContainer.appendChild(notificacao);
+        setTimeout(() => notificacao.remove(), duracao);
+    }
+
+    // Inicia o jogo no modo padrão
+    init();
+});
