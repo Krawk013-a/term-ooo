@@ -23,14 +23,41 @@ body {
     justify-content: space-between;
     align-items: center;
     height: 100vh;
+    overflow: hidden; /* Evita scroll desnecessário */
 }
 
 header {
     width: 100%;
     text-align: center;
-    padding: 16px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--cor-borda);
 }
+
+header h1 {
+    margin-bottom: 10px;
+}
+
+#modo-jogo-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.modo-btn {
+    padding: 8px 16px;
+    font-size: 1rem;
+    background-color: var(--cor-tecla-padrao);
+    color: var(--cor-texto);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.modo-btn:hover {
+    background-color: #999b9c;
+}
+
 
 main {
     display: flex;
@@ -39,14 +66,33 @@ main {
     justify-content: center;
     flex-grow: 1;
     overflow: hidden;
+    width: 100%;
 }
 
-#tabuleiro {
-    display: grid;
-    grid-template-rows: repeat(6, 1fr);
-    gap: 5px;
+#tabuleiros-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
     padding: 10px;
+    width: 100%;
+    flex-grow: 1;
 }
+
+.tabuleiro {
+    display: grid;
+    grid-template-rows: repeat(var(--num-tentativas, 6), 1fr);
+    gap: 5px;
+}
+
+/* Ajustes por modo de jogo */
+.modo-1 .tabuleiro { --num-tentativas: 6; }
+.modo-2 .tabuleiro { --num-tentativas: 7; }
+.modo-4 .tabuleiro { --num-tentativas: 9; }
+
+.modo-2 { flex-wrap: wrap; }
+.modo-4 { flex-wrap: wrap; }
+
 
 .linha {
     display: grid;
@@ -64,18 +110,19 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: transform 0.6s;
+    transition: transform 0.6s, border-color 0.2s;
     transform-style: preserve-3d;
-    position: relative; /* Necessário para a animação 3D e o cursor */
+    position: relative;
 }
+/* Tamanho dinâmico para os modos */
+.modo-2 .letra { width: 50px; height: 50px; font-size: 2rem; }
+.modo-4 .letra { width: 40px; height: 40px; font-size: 1.5rem; }
 
-/* Adicionado para indicar a célula ativa */
+
 .letra.ativa {
-    border-color: var(--cor-texto); /* Muda a cor da borda para indicar seleção */
+    border-color: var(--cor-texto); 
 }
 
-
-/* Animação de virar a letra */
 .letra.revelada {
     transform: rotateX(180deg);
 }
@@ -90,35 +137,27 @@ main {
     align-items: center;
 }
 
-.letra .frente {
-    transform: rotateX(0deg);
-}
+.letra .frente { transform: rotateX(0deg); }
+.letra .verso { transform: rotateX(180deg); border: none; }
 
-.letra .verso {
-    transform: rotateX(180deg);
-    border: none;
-}
-
-/* Cores das letras */
 .letra.certo .verso { background-color: var(--cor-certo); }
 .letra.lugar-errado .verso { background-color: var(--cor-lugar-errado); }
 .letra.nao-existe .verso { background-color: var(--cor-nao-existe); }
 
-
 #teclado-container {
-    padding: 10px;
+    padding: 10px 0;
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centraliza as linhas do teclado */
+    align-items: center;
     gap: 8px;
-    margin-bottom: 20px; /* Um pequeno espaçamento da parte inferior da tela */
+    margin-bottom: 10px;
 }
 
 .linha-teclado {
     display: flex;
     justify-content: center;
     gap: 6px;
-    width: 100%; /* Permite que a linha se ajuste ao container pai */
+    width: 100%;
 }
 
 .tecla {
@@ -127,47 +166,48 @@ main {
     border: 0;
     padding: 0;
     height: 58px;
-    width: 43px; /* LARGURA FIXA PARA TECLAS NORMAIS */
+    width: 43px;
     cursor: pointer;
     background-color: var(--cor-tecla-padrao);
     color: var(--cor-texto);
     border-radius: 4px;
     text-transform: uppercase;
-    display: flex; /* Para centralizar o texto/ícone */
-    justify-content: center; /* Para centralizar o texto/ícone */
-    align-items: center; /* Para centralizar o texto/ícone */
+    display: flex;
+    justify-content: center;
+    align-items: center;
     font-size: 1rem;
-    user-select: none; /* Impede seleção de texto ao clicar */
+    user-select: none;
 }
-.tecla.grande {
-    width: 68px; /* LARGURA MAIOR PARA ENTER/BACKSPACE */
-}
+.tecla.grande { width: 68px; }
 .tecla:hover { background-color: #999b9c; }
 
-/* Cores das teclas */
-.tecla.certo { background-color: var(--cor-certo); }
-.tecla.lugar-errado { background-color: var(--cor-lugar-errado); }
-.tecla.nao-existe { background-color: var(--cor-nao-existe); }
+.tecla.certo { background-color: var(--cor-certo); color: white; }
+.tecla.lugar-errado { background-color: var(--cor-lugar-errado); color: white; }
+.tecla.nao-existe { background-color: var(--cor-nao-existe); color: white; }
 
-/* Notificações */
 #notificacao-container {
-    min-height: 50px; /* Garante espaço para a notificação aparecer */
+    min-height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 15px; /* Espaço entre a notificação e o tabuleiro */
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
 }
+
 .notificacao {
-    background-color: var(--cor-texto);
+    background-color: rgba(255, 255, 255, 0.9);
     color: var(--cor-fundo);
     padding: 10px 20px;
     border-radius: 5px;
     font-weight: bold;
-    animation: fadeinout 0.5s forwards; /* Animação para aparecer e desaparecer */
+    animation: fadeinout 2s forwards;
+    text-align: center;
 }
 
-/* Animação para notificações */
 @keyframes fadeinout {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+    0%, 100% { opacity: 0; transform: translateY(-20px); }
+    10%, 90% { opacity: 1; transform: translateY(0); }
 }
