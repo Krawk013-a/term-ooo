@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
-    const API_URL = '/api/ranking'; // URL relativa para o nosso backend na Vercel
+    const API_URL = '/api/ranking'; // URL relativa para o backend na Vercel
 
     // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selecionarPalavras();
         criarEstruturaUI();
         adicionarListenersDeJogo();
+        atualizarCelulaAtiva();
     }
 
     function limparEstado() {
@@ -134,12 +135,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function handleKeyPress({ key }) {
+    function handleKeyPress(e) {
         if (jogoPausado) return;
-        const keyLower = key.toLowerCase();
-        if (keyLower === 'enter') submeterTentativa();
-        else if (keyLower === 'backspace') apagarLetra();
-        else if (keyLower.length === 1 && keyLower >= 'a' && keyLower <= 'z') adicionarLetra(keyLower);
+        const key = e.key.toLowerCase();
+        if (key === 'enter') submeterTentativa();
+        else if (key === 'backspace') apagarLetra();
+        else if (key.length === 1 && key >= 'a' && key <= 'z') adicionarLetra(key);
     }
     
     function adicionarLetra(letra) {
@@ -148,11 +149,11 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    celula.querySelector('.frente').textContent = letra;
-                    celula.classList.add('ativa');
+                    if(celula) celula.querySelector('.frente').textContent = letra;
                 }
             }
             letraAtual++;
+            atualizarCelulaAtiva();
         }
     }
 
@@ -163,8 +164,20 @@ document.addEventListener('DOMContentLoaded', () => {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    celula.querySelector('.frente').textContent = '';
-                    celula.classList.remove('ativa');
+                     if(celula) celula.querySelector('.frente').textContent = '';
+                }
+            }
+            atualizarCelulaAtiva();
+        }
+    }
+    
+    function atualizarCelulaAtiva() {
+        document.querySelectorAll('.letra.ativa').forEach(c => c.classList.remove('ativa'));
+        if (letraAtual < TAMANHO_PALAVRA) {
+            for (let i = 0; i < numeroDeJogos; i++) {
+                if (!jogosFinalizados[i]) {
+                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
+                    if (celula) celula.classList.add('ativa');
                 }
             }
         }
@@ -213,7 +226,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     mostrarNotificacao("Você venceu!", 2000);
                     submeterPontuacaoOnline(tentativaAtual + 1);
                 } else {
-                    mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.join(', ').toUpperCase()}`, 10000);
+                    mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.filter((_, i) => !jogosFinalizados[i]).join(', ').toUpperCase()}`, 10000);
                 }
                 setTimeout(exibirStats, 2000);
             } else {
@@ -221,6 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 letraAtual = 0;
                 palpiteAtual.fill('');
                 jogoPausado = false;
+                atualizarCelulaAtiva();
             }
         }, TAMANHO_PALAVRA * 250);
     }
@@ -304,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- LÓGICA DO RANKING ONLINE ---
-
     async function buscarRankingOnline() {
         const container = document.getElementById('ranking-online-container');
         container.innerHTML = '<p>Carregando ranking...</p>';
@@ -326,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             container.innerHTML = rankingHTML;
 
         } catch (error) {
-            container.innerHTML = `<p style="color: #ff8a80;">Não foi possível carregar o ranking. Verifique sua conexão ou tente mais tarde.</p><p style="font-size: 0.8rem; color: #818384;">${error.message}</p>`;
+            container.innerHTML = `<p style="color: #ff8a80;">Não foi possível carregar o ranking.</p><p style="font-size: 0.8rem; color: #818384;">${error.message}</p>`;
         }
     }
 
@@ -345,12 +358,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('Pontuação enviada com sucesso!');
         } catch (error) {
             console.error(error.message);
-            // Opcional: mostrar uma pequena notificação de erro ao usuário
         }
     }
     
     // --- INÍCIO DO JOGO ---
     carregarStats();
     adicionarListenersGerais();
-    checarUsername(); // Dispara o início do jogo ou o modal de nome
+    checarUsername();
 });
