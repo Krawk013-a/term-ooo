@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Term.ooo</title>
+    <title>Termo S2</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -30,31 +30,41 @@
         <div id="teclado-container"></div>
     </main>
 
+    <div id="username-modal" class="modal">
+        <div class="modal-content">
+            <h2>Bem-vindo!</h2>
+            <p>Escolha um nome de usuário para o ranking online.</p>
+            <input type="text" id="username-input" placeholder="Seu nome" maxlength="15">
+            <button id="username-save-btn">Salvar</button>
+        </div>
+    </div>
+
     <div id="stats-modal" class="modal">
         <div class="modal-content">
             <button id="close-stats-btn" class="close-btn">&times;</button>
-            <h2>Estatísticas</h2>
-            <div id="stats-grid">
-                <div class="stat-item">
-                    <div id="stat-jogados" class="stat-value">0</div>
-                    <div>Jogos</div>
+            <div class="modal-tabs">
+                <button class="tab-btn ativo" data-tab="stats-local">Suas Estatísticas</button>
+                <button class="tab-btn" data-tab="stats-online">Ranking Online</button>
+            </div>
+
+            <div id="stats-local" class="tab-content ativo">
+                <h2>Estatísticas (<span id="username-display"></span>)</h2>
+                <div id="stats-grid">
+                    <div class="stat-item"><div id="stat-jogados" class="stat-value">0</div><div>Jogos</div></div>
+                    <div class="stat-item"><div id="stat-vitorias" class="stat-value">0%</div><div>Vitórias</div></div>
+                    <div class="stat-item"><div id="stat-sequencia" class="stat-value">0</div><div>Seq. Atual</div></div>
+                    <div class="stat-item"><div id="stat-melhor-seq" class="stat-value">0</div><div>Melhor Seq.</div></div>
                 </div>
-                <div class="stat-item">
-                    <div id="stat-vitorias" class="stat-value">0%</div>
-                    <div>Vitórias</div>
-                </div>
-                <div class="stat-item">
-                    <div id="stat-sequencia" class="stat-value">0</div>
-                    <div>Seq. Atual</div>
-                </div>
-                <div class="stat-item">
-                    <div id="stat-melhor-seq" class="stat-value">0</div>
-                    <div>Melhor Seq.</div>
+                <h3>Distribuição de Tentativas</h3>
+                <div id="distribuicao-container"></div>
+            </div>
+
+            <div id="stats-online" class="tab-content">
+                <h2>Ranking Online - Top 10</h2>
+                <div id="ranking-online-container">
+                    <p>Carregando ranking...</p>
                 </div>
             </div>
-            <h3>Distribuição de Tentativas</h3>
-            <div id="distribuicao-container">
-                </div>
         </div>
     </div>
 

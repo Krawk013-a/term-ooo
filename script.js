@@ -70,7 +70,6 @@ document.addEventListener('DOMContentLoaded', () => {
         criarTeclado();
     }
 
-    // FUNÇÃO CORRIGIDA PARA SER MAIS ESTÁVEL
     function criarTabuleiro(index) {
         const tabuleiro = document.createElement('div');
         tabuleiro.className = 'tabuleiro';
@@ -83,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 letraDiv.className = 'letra';
                 letraDiv.id = `letra-${index}-${i}-${j}`;
                 letraDiv.innerHTML = `<div class="frente"></div><div class="verso"></div>`;
-                linha.appendChild(letraDiv); // Usando appendChild em vez de innerHTML +=
+                linha.appendChild(letraDiv);
             }
             tabuleiro.appendChild(linha);
         }
@@ -217,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }, j * 250);
                 const statusAtual = corTeclado[palpiteStr[j]];
-                if (!statusAtual || statusAtual !== 'certo') corTeclado[palpiteStr[j]] = resultados[j];
+                if (!statusAtual || statusAtual !== 'certo') corTeclado[palpiteStr[j]] = statusAtual;
             }
             if (palpiteStr === palavraSecreta) jogosFinalizados[i] = true;
         }
