@@ -13,8 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
-    const API_RANKING_URL = '/api/ranking'; 
-    const API_PALAVRAS_URL = '/api/palavras'; // <-- NOSSA NOVA API DE PALAVRAS
+    const API_URL = '/api/game'; // <-- MUDOU PARA A API UNIFICADA
 
     // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
@@ -33,10 +32,9 @@ document.addEventListener('DOMContentLoaded', () => {
         limparEstado();
         configurarModo();
         
-        // A MUDANÇA PRINCIPAL ESTÁ AQUI
-        jogoPausado = true; // Pausa o jogo enquanto busca as palavras
+        jogoPausado = true;
         mostrarNotificacao("Buscando novas palavras...", 5000);
-        await selecionarPalavrasOnline(); // Chama a nova função online
+        await selecionarPalavrasOnline();
         jogoPausado = false;
         notificacaoContainer.innerHTML = '';
         
@@ -44,25 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
         adicionarListenersDeJogo();
         atualizarCelulaAtiva();
     }
-
-    // ... (O resto do código até a função selecionarPalavras continua igual)
-
-    function limparEstado() { /* ... idêntico ... */ }
-    function configurarModo() { /* ... idêntico ... */ }
-
-    // NOVA FUNÇÃO PARA BUSCAR PALAVRAS ONLINE
+    
+    // FUNÇÃO ATUALIZADA PARA USAR A NOVA API
     async function selecionarPalavrasOnline() {
         try {
-            // Pede a quantidade de palavras necessárias para o modo de jogo
-            const response = await fetch(`${API_PALAVRAS_URL}?count=${numeroDeJogos}`);
+            const response = await fetch(`${API_URL}?action=getPalavras&count=${numeroDeJogos}`);
             if (!response.ok) throw new Error("Falha na rede");
             const palavras = await response.json();
             palavrasSecretas = palavras;
-            console.log("Palavras secretas recebidas da API:", palavrasSecretas);
         } catch (error) {
-            console.error("Erro ao buscar palavras online, usando backup local:", error);
-            // Se a API falhar, usa as palavras do seu arquivo respostas.js como emergência
-            let disponiveis = [...RESPOSTAS];
+            console.error("API falhou, usando backup local:", error);
+            let disponiveis = [...RESPOSTAS]; // Usa o dicionario.js local como emergência
             for (let i = 0; i < numeroDeJogos; i++) {
                 const index = Math.floor(Math.random() * disponiveis.length);
                 palavrasSecretas.push(disponiveis.splice(index, 1)[0]);
@@ -70,16 +60,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // O resto do seu script.js continua aqui, sem nenhuma outra alteração.
-    // Apenas copie e cole o restante do seu arquivo `script.js` funcional a partir daqui.
-    // (Abaixo está o código completo para garantir)
+    // --- O RESTO DO CÓDIGO PERMANECE IDÊNTICO, MAS VAMOS INCLUIR TUDO PARA GARANTIR ---
     
+    function limparEstado() {
+        tentativaAtual = 0;
+        letraAtual = 0;
+        jogoPausado = false;
+        palpiteAtual.fill('');
+        palavrasSecretas = [];
+        jogosFinalizados = [];
+        tabuleirosContainer.innerHTML = '';
+        tecladoContainer.innerHTML = '';
+        document.removeEventListener('keydown', handleKeyPress);
+    }
+
+    function configurarModo() {
+        if (numeroDeJogos === 2) numTentativas = 7;
+        else if (numeroDeJogos === 4) numTentativas = 9;
+        else numTentativas = 6;
+        jogosFinalizados = Array(numeroDeJogos).fill(false);
+    }
+
     function criarEstruturaUI() {
         tabuleirosContainer.className = `modo-${numeroDeJogos}`;
         for (let i = 0; i < numeroDeJogos; i++) criarTabuleiro(i);
         criarTeclado();
     }
-    
+
     function criarTabuleiro(index) {
         const tabuleiro = document.createElement('div');
         tabuleiro.className = 'tabuleiro';
@@ -131,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target == statsModal) statsModal.style.display = 'none';
         });
         usernameSaveBtn.addEventListener('click', salvarUsername);
+
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('ativo'));
@@ -335,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('ranking-online-container');
         container.innerHTML = '<p>Carregando ranking...</p>';
         try {
-            const response = await fetch(`${API_RANKING_URL}?modo=${numeroDeJogos}`);
+            const response = await fetch(`${API_URL}?modo=${numeroDeJogos}`);
             if (!response.ok) throw new Error('Erro ao buscar ranking do servidor.');
             const ranking = await response.json();
             
@@ -358,7 +366,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function submeterPontuacaoOnline(tentativas) {
         try {
-            const response = await fetch(API_RANKING_URL, {
+            const response = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
