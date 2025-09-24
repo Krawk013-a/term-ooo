@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
-    const API_URL = '/api/ranking'; // URL relativa para o backend na Vercel
+    const API_URL = '/api/ranking'; 
 
     // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
@@ -27,14 +27,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let stats = {};
     let username = '';
 
-    // --- INICIALIZAÇÃO ---
     function init() {
+        console.log('--- INICIANDO NOVO JOGO ---');
         limparEstado();
         configurarModo();
         selecionarPalavras();
         criarEstruturaUI();
         adicionarListenersDeJogo();
         atualizarCelulaAtiva();
+        console.log(`Modo: ${numeroDeJogos}, Tentativas: ${numTentativas}, Palavras:`, palavrasSecretas);
     }
 
     function limparEstado() {
@@ -102,7 +103,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- EVENTOS E INPUT ---
     function adicionarListenersGerais() {
         modoBotoes.forEach(btn => {
             btn.addEventListener('click', () => {
@@ -118,7 +118,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target == statsModal) statsModal.style.display = 'none';
         });
         usernameSaveBtn.addEventListener('click', salvarUsername);
-
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('ativo'));
@@ -145,11 +144,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function adicionarLetra(letra) {
         if (letraAtual < TAMANHO_PALAVRA) {
+            console.log(`adicionarLetra: Tentativa=${tentativaAtual}, Letra=${letraAtual}, Char='${letra}'`);
             palpiteAtual[letraAtual] = letra;
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                    if(celula) celula.querySelector('.frente').textContent = letra;
+                    const id = `letra-${i}-${tentativaAtual}-${letraAtual}`;
+                    const celula = document.getElementById(id);
+                    if(celula) {
+                        celula.querySelector('.frente').textContent = letra;
+                    } else {
+                        console.error(`Célula não encontrada: ${id}`);
+                    }
                 }
             }
             letraAtual++;
@@ -160,11 +165,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function apagarLetra() {
         if (letraAtual > 0) {
             letraAtual--;
+            console.log(`apagarLetra: Tentativa=${tentativaAtual}, Letra=${letraAtual}`);
             palpiteAtual[letraAtual] = '';
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
-                     if(celula) celula.querySelector('.frente').textContent = '';
+                    const id = `letra-${i}-${tentativaAtual}-${letraAtual}`;
+                    const celula = document.getElementById(id);
+                     if(celula) {
+                        celula.querySelector('.frente').textContent = '';
+                    } else {
+                        console.error(`Célula não encontrada: ${id}`);
+                    }
                 }
             }
             atualizarCelulaAtiva();
@@ -173,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function atualizarCelulaAtiva() {
         document.querySelectorAll('.letra.ativa').forEach(c => c.classList.remove('ativa'));
-        if (letraAtual < TAMANHO_PALAVRA) {
+        if (letraAtual < TAMANHO_PALAVRA && !jogoPausado) {
             for (let i = 0; i < numeroDeJogos; i++) {
                 if (!jogosFinalizados[i]) {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${letraAtual}`);
@@ -183,10 +194,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- LÓGICA DO JOGO ---
     function submeterTentativa() {
         if (letraAtual < TAMANHO_PALAVRA) return mostrarNotificacao("Palavra incompleta!");
         const palpiteStr = palpiteAtual.join('');
+        console.log(`--- SUBMETENDO TENTATIVA ${tentativaAtual}: Palavra='${palpiteStr}' ---`);
         if (!DICIONARIO.includes(palpiteStr)) return mostrarNotificacao("Palavra não existe!");
         
         jogoPausado = true;
@@ -194,7 +205,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function verificarPalpite(palpiteStr) {
-        const corTeclado = {};
         for (let i = 0; i < numeroDeJogos; i++) {
             if (jogosFinalizados[i]) continue;
             const palavraSecreta = palavrasSecretas[i];
@@ -203,165 +213,59 @@ document.addEventListener('DOMContentLoaded', () => {
             for (const letra of palavraSecreta) contagem[letra] = (contagem[letra] || 0) + 1;
             for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (palpiteStr[j] === palavraSecreta[j]) { resultados[j] = 'certo'; contagem[palpiteStr[j]]--; } }
             for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (resultados[j]) continue; if (palavraSecreta.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) { resultados[j] = 'lugar-errado'; contagem[palpiteStr[j]]--; } else { resultados[j] = 'nao-existe'; } }
+            
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
+                const id_celula = `letra-${i}-${tentativaAtual}-${j}`;
+                console.log(`VERIFICANDO: Atualizando célula ${id_celula} para o tabuleiro ${i}`);
                 setTimeout(() => {
-                    const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${j}`);
-                    celula.classList.remove('ativa'); celula.classList.add('revelada', resultados[j]); celula.querySelector('.verso').textContent = palpiteStr[j];
+                    const celula = document.getElementById(id_celula);
+                    if (celula) {
+                        celula.classList.add('revelada', resultados[j]);
+                        celula.querySelector('.verso').textContent = palpiteStr[j];
+                    } else {
+                        console.error(`ERRO: Célula ${id_celula} não encontrada durante a animação.`);
+                    }
                 }, j * 250);
-                const statusAtual = corTeclado[palpiteStr[j]];
-                if (!statusAtual || statusAtual !== 'certo') corTeclado[palpiteStr[j]] = resultados[j];
             }
             if (palpiteStr === palavraSecreta) jogosFinalizados[i] = true;
         }
 
         setTimeout(() => {
-            atualizarTeclado(corTeclado);
+            console.log(`--- FIM DA RODADA ${tentativaAtual} ---`);
             const vitoria = jogosFinalizados.every(v => v);
             const derrota = !vitoria && tentativaAtual === numTentativas - 1;
 
             if (vitoria || derrota) {
-                atualizarStats(vitoria);
+                // ... (lógica de fim de jogo) ...
                 jogoPausado = true;
-                if(vitoria) {
-                    mostrarNotificacao("Você venceu!", 2000);
-                    submeterPontuacaoOnline(tentativaAtual + 1);
-                } else {
-                    mostrarNotificacao(`Perdeu! Palavras: ${palavrasSecretas.filter((_, i) => !jogosFinalizados[i]).join(', ').toUpperCase()}`, 10000);
-                }
-                setTimeout(exibirStats, 2000);
             } else {
                 tentativaAtual++;
                 letraAtual = 0;
                 palpiteAtual.fill('');
                 jogoPausado = false;
+                console.log(`Próxima rodada. Nova tentativa = ${tentativaAtual}`);
                 atualizarCelulaAtiva();
             }
         }, TAMANHO_PALAVRA * 250);
     }
     
+    // As outras funções (stats, api, etc.) continuam aqui, sem alterações...
+    // ... (colei apenas as partes importantes para o debug)
+    function atualizarTeclado(cores) { /* ... */ } function mostrarNotificacao(mensagem, duracao = 2000) { /* ... */ } function checarUsername() { /* ... */ } function salvarUsername() { /* ... */ } function carregarStats() { /* ... */ } function salvarStats() { /* ... */ } function getStatsAtuais() { /* ... */ } function atualizarStats(vitoria) { /* ... */ } function exibirStats() { /* ... */ } async function buscarRankingOnline() { /* ... */ } async function submeterPontuacaoOnline(tentativas) { /* ... */ }
+    
+    // Funções completas que não foram alteradas (para copiar e colar)
     function atualizarTeclado(cores) { for (const [letra, status] of Object.entries(cores)) { const tecla = document.querySelector(`.tecla[data-key="${letra}"]`); if (tecla) { tecla.classList.remove('certo', 'lugar-errado', 'nao-existe'); tecla.classList.add(status); } } }
     function mostrarNotificacao(mensagem, duracao = 2000) { const n = document.createElement('div'); n.className = 'notificacao'; n.textContent = mensagem; notificacaoContainer.innerHTML = ''; notificacaoContainer.appendChild(n); setTimeout(() => n.remove(), duracao); }
-
-    // --- LÓGICA DE USUÁRIO E ESTATÍSTICAS ---
-    function checarUsername() {
-        username = localStorage.getItem('termoUsername');
-        if (!username) {
-            usernameModal.style.display = 'flex';
-        } else {
-            init();
-        }
-    }
-
-    function salvarUsername() {
-        const nomeInput = usernameInput.value.trim();
-        if (nomeInput && nomeInput.length >= 3) {
-            username = nomeInput;
-            localStorage.setItem('termoUsername', username);
-            usernameModal.style.display = 'none';
-            init();
-        } else {
-            mostrarNotificacao("Nome inválido (mín. 3 letras)");
-        }
-    }
-
-    function carregarStats() {
-        const statsJSON = localStorage.getItem('termoStats');
-        stats = statsJSON ? JSON.parse(statsJSON) : {};
-    }
-
-    function salvarStats() {
-        localStorage.setItem('termoStats', JSON.stringify(stats));
-    }
-
-    function getStatsAtuais() {
-        if (!stats[numeroDeJogos]) {
-            stats[numeroDeJogos] = { jogados: 0, vitorias: 0, seqAtual: 0, melhorSeq: 0, distribuicao: {} };
-        }
-        return stats[numeroDeJogos];
-    }
-
-    function atualizarStats(vitoria) {
-        const s = getStatsAtuais();
-        s.jogados++;
-        if (vitoria) {
-            s.vitorias++;
-            s.seqAtual++;
-            s.melhorSeq = Math.max(s.melhorSeq, s.seqAtual);
-            const linhaVitoria = tentativaAtual + 1;
-            s.distribuicao[linhaVitoria] = (s.distribuicao[linhaVitoria] || 0) + 1;
-        } else {
-            s.seqAtual = 0;
-        }
-        salvarStats();
-    }
+    function checarUsername() { username = localStorage.getItem('termoUsername'); if (!username) { usernameModal.style.display = 'flex'; } else { init(); } }
+    function salvarUsername() { const nomeInput = usernameInput.value.trim(); if (nomeInput && nomeInput.length >= 3) { username = nomeInput; localStorage.setItem('termoUsername', username); usernameModal.style.display = 'none'; init(); } else { mostrarNotificacao("Nome inválido (mín. 3 letras)"); } }
+    function carregarStats() { const statsJSON = localStorage.getItem('termoStats'); stats = statsJSON ? JSON.parse(statsJSON) : {}; }
+    function salvarStats() { localStorage.setItem('termoStats', JSON.stringify(stats)); }
+    function getStatsAtuais() { if (!stats[numeroDeJogos]) { stats[numeroDeJogos] = { jogados: 0, vitorias: 0, seqAtual: 0, melhorSeq: 0, distribuicao: {} }; } return stats[numeroDeJogos]; }
+    function atualizarStats(vitoria) { const s = getStatsAtuais(); s.jogados++; if (vitoria) { s.vitorias++; s.seqAtual++; s.melhorSeq = Math.max(s.melhorSeq, s.seqAtual); const linhaVitoria = tentativaAtual + 1; s.distribuicao[linhaVitoria] = (s.distribuicao[linhaVitoria] || 0) + 1; } else { s.seqAtual = 0; } salvarStats(); }
+    function exibirStats() { const s = getStatsAtuais(); document.getElementById('username-display').textContent = username; document.getElementById('stat-jogados').textContent = s.jogados; const percVitorias = s.jogados > 0 ? Math.round((s.vitorias / s.jogados) * 100) : 0; document.getElementById('stat-vitorias').textContent = `${percVitorias}%`; document.getElementById('stat-sequencia').textContent = s.seqAtual; document.getElementById('stat-melhor-seq').textContent = s.melhorSeq; const containerDist = document.getElementById('distribuicao-container'); containerDist.innerHTML = ''; const maxVitoriasDist = Math.max(...Object.values(s.distribuicao), 0); for (let i = 1; i <= numTentativas; i++) { const vitorias = s.distribuicao[i] || 0; const perc = maxVitoriasDist > 0 ? (vitorias / maxVitoriasDist) * 100 : 0; containerDist.innerHTML += `<div class="dist-linha"><div class="dist-label">${i}</div><div class="dist-barra" style="width: ${perc || 5}%;">${vitorias}</div></div>`; } buscarRankingOnline(); statsModal.style.display = 'flex'; }
+    async function buscarRankingOnline() { const container = document.getElementById('ranking-online-container'); container.innerHTML = '<p>Carregando ranking...</p>'; try { const response = await fetch(`${API_URL}?modo=${numeroDeJogos}`); if (!response.ok) throw new Error('Erro ao buscar ranking do servidor.'); const ranking = await response.json(); if (ranking.length === 0) { container.innerHTML = '<p>Nenhuma pontuação registrada neste modo. Seja o primeiro!</p>'; return; } let rankingHTML = '<table><tr><th>#</th><th>Nome</th><th>Tentativas</th></tr>'; ranking.forEach((item, index) => { rankingHTML += `<tr><td>${index + 1}</td><td>${item.nome}</td><td>${item.tentativas}</td></tr>`; }); rankingHTML += '</table>'; container.innerHTML = rankingHTML; } catch (error) { container.innerHTML = `<p style="color: #ff8a80;">Não foi possível carregar o ranking.</p><p style="font-size: 0.8rem; color: #818384;">${error.message}</p>`; } }
+    async function submeterPontuacaoOnline(tentativas) { try { const response = await fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ nome: username, modo: numeroDeJogos, tentativas: tentativas }) }); if (!response.ok) throw new Error('Erro ao enviar pontuação para o servidor.'); console.log('Pontuação enviada com sucesso!'); } catch (error) { console.error(error.message); } }
     
-    function exibirStats() {
-        const s = getStatsAtuais();
-        document.getElementById('username-display').textContent = username;
-        document.getElementById('stat-jogados').textContent = s.jogados;
-        const percVitorias = s.jogados > 0 ? Math.round((s.vitorias / s.jogados) * 100) : 0;
-        document.getElementById('stat-vitorias').textContent = `${percVitorias}%`;
-        document.getElementById('stat-sequencia').textContent = s.seqAtual;
-        document.getElementById('stat-melhor-seq').textContent = s.melhorSeq;
-        
-        const containerDist = document.getElementById('distribuicao-container');
-        containerDist.innerHTML = '';
-        const maxVitoriasDist = Math.max(...Object.values(s.distribuicao), 0);
-        
-        for (let i = 1; i <= numTentativas; i++) {
-            const vitorias = s.distribuicao[i] || 0;
-            const perc = maxVitoriasDist > 0 ? (vitorias / maxVitoriasDist) * 100 : 0;
-            containerDist.innerHTML += `<div class="dist-linha"><div class="dist-label">${i}</div><div class="dist-barra" style="width: ${perc || 5}%;">${vitorias}</div></div>`;
-        }
-        buscarRankingOnline();
-        statsModal.style.display = 'flex';
-    }
-
-    // --- LÓGICA DO RANKING ONLINE ---
-    async function buscarRankingOnline() {
-        const container = document.getElementById('ranking-online-container');
-        container.innerHTML = '<p>Carregando ranking...</p>';
-        try {
-            const response = await fetch(`${API_URL}?modo=${numeroDeJogos}`);
-            if (!response.ok) throw new Error('Erro ao buscar ranking do servidor.');
-            const ranking = await response.json();
-            
-            if (ranking.length === 0) {
-                container.innerHTML = '<p>Nenhuma pontuação registrada neste modo. Seja o primeiro!</p>';
-                return;
-            }
-
-            let rankingHTML = '<table><tr><th>#</th><th>Nome</th><th>Tentativas</th></tr>';
-            ranking.forEach((item, index) => {
-                rankingHTML += `<tr><td>${index + 1}</td><td>${item.nome}</td><td>${item.tentativas}</td></tr>`;
-            });
-            rankingHTML += '</table>';
-            container.innerHTML = rankingHTML;
-
-        } catch (error) {
-            container.innerHTML = `<p style="color: #ff8a80;">Não foi possível carregar o ranking.</p><p style="font-size: 0.8rem; color: #818384;">${error.message}</p>`;
-        }
-    }
-
-    async function submeterPontuacaoOnline(tentativas) {
-        try {
-            const response = await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    nome: username,
-                    modo: numeroDeJogos,
-                    tentativas: tentativas
-                })
-            });
-            if (!response.ok) throw new Error('Erro ao enviar pontuação para o servidor.');
-            console.log('Pontuação enviada com sucesso!');
-        } catch (error) {
-            console.error(error.message);
-        }
-    }
-    
-    // --- INÍCIO DO JOGO ---
     carregarStats();
     adicionarListenersGerais();
     checarUsername();
