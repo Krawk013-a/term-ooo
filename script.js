@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONSTANTES ---
     const TAMANHO_PALAVRA = 5;
-    const API_URL = '/api/game'; // <-- MUDOU PARA A API UNIFICADA
+    const API_URL = '/api/game'; 
 
     // --- ESTADO GLOBAL DO JOGO ---
     let numeroDeJogos = 1;
@@ -26,6 +26,14 @@ document.addEventListener('DOMContentLoaded', () => {
     let palpiteAtual = Array(TAMANHO_PALAVRA).fill('');
     let stats = {};
     let username = '';
+    
+    // --- NOVO: DICIONÁRIO NORMALIZADO PARA VERIFICAÇÃO RÁPIDA ---
+    const DICIONARIO_NORMALIZADO = new Set(DICIONARIO.map(p => normalize(p)));
+
+    // --- FUNÇÃO AUXILIAR PARA REMOVER ACENTOS ---
+    function normalize(text) {
+        return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
 
     // --- INICIALIZAÇÃO ---
     async function init() {
@@ -42,8 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adicionarListenersDeJogo();
         atualizarCelulaAtiva();
     }
-    
-    // FUNÇÃO ATUALIZADA PARA USAR A NOVA API
+
     async function selecionarPalavrasOnline() {
         try {
             const response = await fetch(`${API_URL}?action=getPalavras&count=${numeroDeJogos}`);
@@ -52,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             palavrasSecretas = palavras;
         } catch (error) {
             console.error("API falhou, usando backup local:", error);
-            let disponiveis = [...RESPOSTAS]; // Usa o dicionario.js local como emergência
+            let disponiveis = [...RESPOSTAS];
             for (let i = 0; i < numeroDeJogos; i++) {
                 const index = Math.floor(Math.random() * disponiveis.length);
                 palavrasSecretas.push(disponiveis.splice(index, 1)[0]);
@@ -60,8 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- O RESTO DO CÓDIGO PERMANECE IDÊNTICO, MAS VAMOS INCLUIR TUDO PARA GARANTIR ---
-    
     function limparEstado() {
         tentativaAtual = 0;
         letraAtual = 0;
@@ -138,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.target == statsModal) statsModal.style.display = 'none';
         });
         usernameSaveBtn.addEventListener('click', salvarUsername);
-
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.tab-btn, .tab-content').forEach(el => el.classList.remove('ativo'));
@@ -206,7 +210,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function submeterTentativa() {
         if (letraAtual < TAMANHO_PALAVRA) return mostrarNotificacao("Palavra incompleta!");
         const palpiteStr = palpiteAtual.join('');
-        if (!DICIONARIO.includes(palpiteStr)) return mostrarNotificacao("Palavra não existe!");
+        
+        // MUDANÇA: Verifica no dicionário normalizado
+        if (!DICIONARIO_NORMALIZADO.has(palpiteStr)) return mostrarNotificacao("Palavra não existe!");
         
         jogoPausado = true;
         verificarPalpite(palpiteStr);
@@ -216,12 +222,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const corTeclado = {};
         for (let i = 0; i < numeroDeJogos; i++) {
             if (jogosFinalizados[i]) continue;
+            
             const palavraSecreta = palavrasSecretas[i];
+            // MUDANÇA: Cria uma versão sem acentos da palavra secreta para comparar
+            const palavraSecretaNormalizada = normalize(palavraSecreta);
+            
             const resultados = Array(TAMANHO_PALAVRA).fill('');
             const contagem = {};
-            for (const letra of palavraSecreta) contagem[letra] = (contagem[letra] || 0) + 1;
-            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (palpiteStr[j] === palavraSecreta[j]) { resultados[j] = 'certo'; contagem[palpiteStr[j]]--; } }
-            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (resultados[j]) continue; if (palavraSecreta.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) { resultados[j] = 'lugar-errado'; contagem[palpiteStr[j]]--; } else { resultados[j] = 'nao-existe'; } }
+            for (const letra of palavraSecretaNormalizada) contagem[letra] = (contagem[letra] || 0) + 1;
+            
+            // Compara o palpite (sem acento) com a palavra secreta normalizada
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (palpiteStr[j] === palavraSecretaNormalizada[j]) { resultados[j] = 'certo'; contagem[palpiteStr[j]]--; } }
+            for (let j = 0; j < TAMANHO_PALAVRA; j++) { if (resultados[j]) continue; if (palavraSecretaNormalizada.includes(palpiteStr[j]) && contagem[palpiteStr[j]] > 0) { resultados[j] = 'lugar-errado'; contagem[palpiteStr[j]]--; } else { resultados[j] = 'nao-existe'; } }
+            
             for (let j = 0; j < TAMANHO_PALAVRA; j++) {
                 setTimeout(() => {
                     const celula = document.getElementById(`letra-${i}-${tentativaAtual}-${j}`);
@@ -233,7 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const statusAtual = corTeclado[palpiteStr[j]];
                 if (!statusAtual || statusAtual !== 'certo') corTeclado[palpiteStr[j]] = resultados[j];
             }
-            if (palpiteStr === palavraSecreta) jogosFinalizados[i] = true;
+            
+            // MUDANÇA: Condição de vitória também usa a palavra normalizada
+            if (palpiteStr === palavraSecretaNormalizada) jogosFinalizados[i] = true;
         }
 
         setTimeout(() => {
